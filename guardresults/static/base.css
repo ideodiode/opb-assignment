@@ -1,0 +1,19 @@
+.panel{
+    border-top: 0px;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+}
+#id_per_page{
+    width:5em;
+    margin: 3px 5px 0 0;
+}
+.search-result{
+    border: 2px solid rgba(0, 0, 0, 0.0);
+    border-radius: 4px;
+    -webkit-transition: all .2s ease-in-out;
+            transition: all .2s ease-in-out;
+}
+.search-result:hover,
+.search-result:focus{
+  border-color: #428bca;
+}

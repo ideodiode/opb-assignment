@@ -1,0 +1,223 @@
+<html>
+    <head>
+        <title>Guardian Article Search</title>
+        <meta name="viewport" content="width=device-width, intitial-scale=1.0">
+        <link href="/static/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+        <link href="/static/base.css" rel="stylesheet" media="screen">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+        <script src="/static/bootstrap/js/bootstrap.min.js"></script>
+    </head>
+    <body>
+    <div class="container">
+        
+        <div class="row">
+            <div class="text-center">
+                <h2>(Unofficial) Guardian Article Search</h1>
+                
+                <ul class="nav nav-tabs" id="id_search_tabs">
+                    <li class="active"><a href="#search" data-toggle="tab">Search</a></li>
+                    <li><a href="#adv_search" data-toggle="tab">Advanced Search</a></li>
+                </ul>
+
+                <!-- Tab panes -->
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <form class="form-horizontal" method="GET" action="/search" role="form">
+                            <div class="form-group">
+                                <label for="id_search_content" class="col-sm-2 control-label">Content</label>
+                                <div class="col-sm-10"> 
+                                    <div class="input-group">
+                                        <input type="text" name="q" id="id_search_content" value="{{ q }}"
+                                            class="form-control"
+                                        />
+                                        <span class="input-group-btn">
+                                            <button class="btn btn-default" id="id_submit_btn" type="submit"><span class="glyphicon glyphicon-search"></span>&nbsp;</button>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" name="page-size" value="{{ per_page }}"/>
+                            <div class="tab-content">
+                                <div class="tab-pane" id="search"></div>
+                                <div class="tab-pane" id="adv_search">
+                                    <div class="form-group">
+                                        <label for="id_search_tag" class="col-sm-2 control-label">Tag</label>
+                                         <div class="col-sm-10"> 
+                                            <input name="tag" id="id_search_tags"
+                                                class="form-control"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="id_search_section" class="col-sm-2 control-label">Section</label>
+                                         <div class="col-sm-10"> 
+                                            <input name="section" id="id_search_section"
+                                                class="form-control"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="id_search_date" class="col-sm-2 control-label">Date</label>
+                                         <div class="col-sm-10"> 
+                                            <select name="date-id" id="id_search_date"
+                                                class="form-control">
+                                                <option value=""></option>
+                                                <option value="date/today">Today</option>
+                                                <option value="date/yesterday">Yesterday</option>
+                                                <option value="date/last24hours">Last 24 Hours</option>
+                                                <option value="date/last7days">Last 7 Days</option>
+                                                <option value="date/last30days">Last 30 Days</option>
+                                                {% for year in years reversed %}
+                                                    <option value="date/{{ year }}">{{ year}}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% if search_response %}
+        <div class="row">
+            <div class="col-xs-6">
+                <h5>'{{ search_response.total }} results found'</h5>
+            </div>
+            <div class="col-xs-6">
+                <label for="id_per_page" class="pull-right">Per </br>Page</label>
+                <select class="form-control pull-right" id="id_per_page" data-url={{ per_page_url }}>
+                    <option {% if per_page == '10' %}selected{% endif %}>10</option>
+                    <option {% if per_page == '25' %}selected{% endif %}>25</option>
+                    <option {% if per_page == '50' %}selected{% endif %}>50</option>
+                </select>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="row">
+            <ul class="media-list">
+                {% for result in search_response.results %}
+                <li class="media search-result" id="{{ result.id }}">
+                    <a class="pull-left">
+                        <img class="media-object" src="{{ result.fields.thumbnail }}" alt="">
+                    </a>
+                    <div class="media-body">
+                        <h4 class="media-heading"><a href={{ result.webUrl }}>{{ result.fields.headline }}</a></h4>
+                        <p><em>{{ result.fields.trailText|striptags|safe }}</em></p>
+                        <p>{{ result.fields.byline|striptags }} | {{ result.webPublicationDate|slice:':10' }} {{ result.webPublicationDate|slice:'11:16' }}</p>
+                        <ul class="related_results fade hide">
+                        </ul>
+                    </div>
+                </li>
+                    
+                {% endfor %}
+            </ul>
+        </div>
+        
+        {% if search_response.pages > 2 %}
+        <div class="text-center">
+            <ul class="pagination">
+                
+                    {% if search_response.currentPage == 1  %}
+                        <li class="disabled"><a>
+                    {% else %}
+                        <li><a href={% with str_number=search_response.currentPage|add:"-1"|stringformat:"s" %}
+                        {% with page_url=pagination_url|add:"&page="|add:str_number %}
+                            "{{ page_url }}">
+                        {% endwith %}
+                        {% endwith %}
+                    {% endif %}
+                    &laquo;</a></li>
+                    
+                {% for page_number in page_numbers %}
+                    <li 
+                        {%if page_number == search_response.currentPage %}
+                            class="active"
+                        {% endif %}
+                        ><a href=
+                            {% with str_number=page_number|stringformat:"s" %}
+                            {% with page_url=pagination_url|add:"&page="|add:str_number %}
+                                "{{ page_url }}"
+                            {% endwith %}
+                            {% endwith %}>
+                        {% if page_number == search_response.currentPage %}
+                            <span class="sr-only">(current)</span>
+                        {% endif %}
+                        {{ page_number }}</a></li>
+                {% endfor %}
+                
+                 
+                {% if search_response.currentPage == search_response.pages  %}
+                    <li class="disabled"><a>
+                {% else %}
+                    <li><a href=
+                        {% with str_number=search_response.currentPage|add:"1"|stringformat:"s" %}
+                        {% with page_url=pagination_url|add:"&page="|add:str_number %}
+                            "{{ page_url }}">
+                        {% endwith %}
+                        {% endwith %}
+                {% endif %}
+                    &raquo;</a></li>
+            </ul>
+        </div>
+        {% endif %}
+        
+    </div>
+    
+    <script type="text/javascript">
+        $(document).ready(function(){
+            $('#id_search_tabs a').click(function (e) {
+                e.preventDefault();
+                $(this).tab('show');
+            });
+            
+            $('#id_submit_btn').click(function (e) {
+                $('form').submit();
+                    return false;
+            });
+            
+            $('#id_per_page').change(function(){
+                var url = $(this).attr('data-url');
+                url = url + "&page-size=" + $(this).val();
+                window.location.replace(url);
+            });
+            
+            $('input').keypress(function (e) {
+                if (e.which == 13) {
+                    $('form').submit();
+                    return false;
+                }
+            });
+            
+            $(".search-result").click(function (e) {
+                var id = $(this).attr('id');
+                var handle = $(this).children('.media-body').children('.related_results');
+                handle.toggleClass('in hide');
+                
+                if(!$.trim(handle.html())) {
+                    $.get('/related_search', {id: id}, function(data){
+                        var len = data.length;
+                        for(var i = 0; i<len; i++){
+                            if(data[i].fields.thumbnail)
+                                var thumb = "src=" + data[i].fields.thumbnail;
+                            else
+                                var thumb = '';
+                                
+                            handle.append("<li class='media'><a class='pull-left'><img class='media-object' " + thumb + "></a><div class='media-body'><h4 class='media-heading'><a href=" + data[i].webUrl + ">" + data[i].fields.headline + "</a></h4><p><em>" + data[i].fields.trailText + "</em></p><p>" + data[i].fields.byline + " | "  + data[i].webPublicationDate.slice(0, 10) + " " + data[i].webPublicationDate.slice(11, 16) + "</p></div></li>");
+                        }
+                        if( len == 0)
+                            handle.append("<div class='text-center'><strong>No Related Results Found</strong></div>");
+                        
+                    });
+                }
+            });
+        });
+
+    </script>
+    
+    </body>
+</html>
