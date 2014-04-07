@@ -4,7 +4,9 @@ from django.http import HttpResponse
 import json, datetime
 
 def home_page(request):
-    return render(request, 'home.html')
+    now = datetime.datetime.now()
+    years = list(range(2008, now.year+1))
+    return render(request, 'home.html', {'years':years})
 
 def search(request):
     url = 'http://content.guardianapis.com/search?'
